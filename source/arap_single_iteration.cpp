@@ -10,12 +10,14 @@ void arap_single_iteration(
         const Eigen::MatrixXd &bc,
         Eigen::MatrixXd &U) {
   // i'm really not sure why this is so slow D:
-  Eigen::MatrixXd C = K.transpose() * U;
+  Eigen::MatrixXd C = (K.transpose() * U).normalized();
   // find rotations closest to blocks of C
   Eigen::MatrixXd R(C.rows(), 3);
   for (int k = 0; k < C.rows(); k += 3) {
     Eigen::Matrix3d Rk;
-    closest_rotation(C.block<3, 3>(k, 0), Rk);
+    Eigen::Matrix3d Ck = C.block<3, 3>(k, 0);
+    igl::polar_svd3x3(Ck, Rk);
+    // closest_rotation(Ck, Rk);  // a bit jankier than polar_svd3x3 for some reason
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++) {
         R(k + i, j) = Rk(i, j);  // copy Rk to R
