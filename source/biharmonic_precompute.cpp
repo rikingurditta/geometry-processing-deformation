@@ -21,14 +21,8 @@ void biharmonic_precompute(
   igl::cotmatrix(V, F, L);
   // bi-laplacian, more or less
   Eigen::SparseMatrix<double> Q = L.transpose() * Minv * L;
-  // set up constraints matrix based on list of constraints b
-  std::vector<Eigen::Triplet<double>> tripletList;
-  tripletList.reserve(b.rows());
-  for (int i = 0; i < b.rows(); i++) {
-    tripletList.emplace_back(i, b(i), 1.);
-  }
-  Eigen::SparseMatrix<double> Aeq(b.rows(), V.cols());
-  Aeq.setFromTriplets(tripletList.begin(), tripletList.end());
+  // empty constraints matrix, irrelevant to us
+  Eigen::SparseMatrix<double> Aeq(b.rows(), V.rows());
   // precompute system
   igl::min_quad_with_fixed_precompute(Q, b, Aeq, true, data);
   data.n = V.rows();
