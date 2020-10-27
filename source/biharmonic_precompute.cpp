@@ -10,6 +10,26 @@ void biharmonic_precompute(
   const Eigen::VectorXi & b,
   igl::min_quad_with_fixed_data<double> & data)
 {
-  // REPLACE WITH YOUR CODE
+  // mass matrix
+  Eigen::SparseMatrix<double> M;
+  igl::massmatrix(V, F, igl::MASSMATRIX_TYPE_BARYCENTRIC, M);
+  // inverse mass matrix
+  Eigen::SparseMatrix<double> Minv;
+  igl::invert_diag(M, Minv);
+  // cotangent laplacian
+  Eigen::SparseMatrix<double> L;
+  igl::cotmatrix(V, F, L);
+  // bi-laplacian, more or less
+  Eigen::SparseMatrix<double> Q = L.transpose() * Minv * L;
+  // set up constraints matrix based on list of constraints b
+  std::vector<Eigen::Triplet<double>> tripletList;
+  tripletList.reserve(b.rows());
+  for (int i = 0; i < b.rows(); i++) {
+    tripletList.emplace_back(i, b(i), 1.);
+  }
+  Eigen::SparseMatrix<double> Aeq(b.rows(), V.cols());
+  Aeq.setFromTriplets(tripletList.begin(), tripletList.end());
+  // precompute system
+  igl::min_quad_with_fixed_precompute(Q, b, Aeq, true, data);
   data.n = V.rows();
 }
